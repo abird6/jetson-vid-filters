@@ -76,7 +76,7 @@ def get_skin_mask(frame_rgb, skin_roi, skin_gmm, not_skin_gmm):
     mask = skin_score > not_skin_score
     mask = mask.reshape(frame_rgb.shape[0], frame_rgb.shape[1])
     mask = mask.astype(np.uint8)
-    mask = cv2.dilate(mask, (9, 9), iterations=20)
+    mask = cv2.dilate(mask, (3, 3), iterations=5)
 
     return mask
 
@@ -107,7 +107,7 @@ def get_shoulder_mask(frame, x, y, w, h):
     shoulder_mask = cv2.bitwise_and(yuv_mask, region_mask)
 
     # dilate mask to reduce blank spots
-    shoulder_mask = cv2.dilate(shoulder_mask, (10, 10), iterations=40)
+    shoulder_mask = cv2.dilate(shoulder_mask, (7, 7), iterations=5)
         
     return shoulder_mask
 
