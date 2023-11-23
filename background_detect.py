@@ -13,7 +13,7 @@ def gstreamer_pipeline(
     capture_height=480,
     display_width=640,
     display_height=480,
-    framerate=10,
+    framerate=15,
     flip_method=0,
 ):
     return (
@@ -82,7 +82,6 @@ def get_skin_mask(frame_rgb, skin_roi, skin_gmm, not_skin_gmm):
     return mask
 
 def get_shoulder_mask(frame, x, y, w, h):
-    gpu_frame = cv2.cuda_GpuMat()
     shoulder_mask = []
 
     k = 2.5 # scaling factor from head to shoulders
@@ -105,15 +104,11 @@ def get_shoulder_mask(frame, x, y, w, h):
 
 
     # create new mask from hsv colour limits
-    gpu_frame.upload(frame_yuv)
-    print(lower)
-    hsv_mask = cv2.cuda.inRange(src=gpu_frame, lowerb=lower, upperb=upper)
-    shoulder_mask = cv2.cuda.bitwise_and(hsv_mask, region_mask)
+    yuv_mask = cv2.inRange(frame_yuv, lower, upper)
+    shoulder_mask = cv2.bitwise_and(yuv_mask, region_mask)
 
     # dilate mask to reduce blank spots
-    shoulder_mask = cv2.cuda.dilate(shoulder_mask, (10, 10), iterations=40)
-
-    shoulder_mask = gpu_frame.download()
+    shoulder_mask = cv2.dilate(shoulder_mask, (10, 10), iterations=40)
         
     return shoulder_mask
 
