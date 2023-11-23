@@ -161,17 +161,17 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
 # initial CUDA GPU upload before camera starts
 window_title = 'Background '
 window_title += 'Blurring' if is_blurring else 'Replacement'
-frame_counter = 0
+frame_counter = 5
 if cap.isOpened():
     try:
         window_handle = cv2.namedWindow(window_title, cv2.WINDOW_AUTOSIZE)
         while True:
-            if frame_counter == 5:
-                ret, frame = cap.read()
+            ret, frame = cap.read()
 
-                if not ret: # if no frame is read
-                    break
+            if not ret: # if no frame is read
+                break
                 
+            if frame_counter == 5:
 
                 # create a region of interest for skin classifier using cv2 face detect
                 frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
