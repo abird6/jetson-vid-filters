@@ -209,11 +209,11 @@ if cap.isOpened():
                     skin_roi = (x1, x1+w1, y1, y1+h1) 
 
                     # detect skin and create mask
-                    skin_mask = get_skin_mask(frame, skin_roi, skin_gmm, not_skin_gmm)
+                    #skin_mask = get_skin_mask(frame, skin_roi, skin_gmm, not_skin_gmm)
                     #print('[2/3] Skin mask done')
 
                     # add to foreground mask
-                    fg_mask = cv2.add(fg_mask, skin_mask)
+                    #fg_mask = cv2.add(fg_mask, skin_mask)
 
 
                     # detect shoulders and create mask
