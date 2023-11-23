@@ -106,7 +106,7 @@ def get_shoulder_mask(frame, x, y, w, h):
 
 
     # create new mask from hsv colour limits
-    hsv_mask = cv2.cuda.inRange(frame_yuv, lower, upper)
+    hsv_mask = cv2.cuda.inRange(src=frame_yuv, lowerb=lower, upperb=upper)
     shoulder_mask = cv2.cuda.bitwise_and(hsv_mask, region_mask)
 
     # dilate mask to reduce blank spots
