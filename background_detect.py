@@ -248,7 +248,6 @@ if cap.isOpened():
             key = cv2.waitKey(10) & 0xFF
             if key == 27 or key == ord('q'):
                 break
-            time.sleep(1/15)
     finally:
         cap.release()   
         cv2.destroyAllWindows()
