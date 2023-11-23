@@ -2,27 +2,56 @@ import numpy as np
 import cv2
 import math
 
+# initialise CSI port for camera
+def gstreamer_pipeline(
+    sensor_id=0,
+    capture_width=640,
+    capture_height=480,
+    display_width=640,
+    display_height=480,
+    framerate=30,
+    flip_method=0,
+):
+    return (
+        "nvarguscamerasrc sensor-id=%d ! "
+        "video/x-raw(memory:NVMM), width=(int)%d, height=(int)%d, framerate=(fraction)%d/1 ! "
+        "nvvidconv flip-method=%d ! "
+        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
+        "videoconvert ! "
+        "video/x-raw, format=(string)BGR ! appsink"
+        % (
+            sensor_id,
+            capture_width,
+            capture_height,
+            framerate,
+            flip_method,
+            display_width,
+            display_height,
+        )
+    )
 
 if __name__ == '__main__':
     # Parameters for distortion
     center_x_init = 320  # Adjust based on your camera's resolution
     center_y_init = 240  # Adjust based on your camera's resolution
-    radius = 200
+    radius = 100
     scale_x = 1.0
     scale_y = 1.0
     amount = 0.5
 
     # set up face detection
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
     # read in video feed
-    vid = cv2.VideoCapture(0)
+    vid = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+
+    ret, frame = vid.read()
+
+    # grab the dimensions of the image
+    (h, w, _) = frame.shape
 
     while True:
         ret, frame = vid.read()
-
-        # grab the dimensions of the image
-        (h, w, _) = frame.shape
 
         # find faces in frame
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
