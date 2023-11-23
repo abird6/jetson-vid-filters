@@ -2,7 +2,6 @@
 from sklearn.mixture import GaussianMixture
 import numpy as np
 import cv2
-from cv2 import cuda
 import pandas as pd
 import sys
 
@@ -63,7 +62,7 @@ def get_skin_mask(frame_rgb, skin_roi, skin_gmm, not_skin_gmm):
     # create rough mask around skin_roi (i.e. face)
     mask_roi = np.zeros_like(frame_rgb[:, :, 0])
     mask_roi[skin_roi[2]:skin_roi[3], skin_roi[0]:skin_roi[1]] = 255
-    frame = cv2.bitwise_and(frame_rgb, frame_rgb, mask=mask_roi)
+    frame = cv2.cuda.bitwise_and(frame_rgb, frame_rgb, mask=mask_roi)
 
     # convert to YCbCr
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
@@ -129,7 +128,7 @@ def get_inner_face_mask(frame, eyes):
     # use box coordinates to create mask
     face_mask = np.zeros_like(frame[:, :, 0])
     face_mask[y:y1, x:x1] = 255
-    print('[1/3] Inner face mask done')
+    #print('[1/3] Inner face mask done')
 
     return face_mask
 
@@ -171,12 +170,12 @@ if cap.isOpened():
             # create a region of interest for skin classifier using cv2 face detect
             frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             face = face_cascade.detectMultiScale(frame_grey, 1.1, 4)
-            print('Face detected' if len(face) > 0 else 'No Faces detected')
+            #print('Face detected' if len(face) > 0 else 'No Faces detected')
 
             eyes = eye_cascade.detectMultiScale(frame_grey, 1.1, 4)
-            print('Eyes detected' if len(eyes) > 0 else 'No Eyes detected')
+            #print('Eyes detected' if len(eyes) > 0 else 'No Eyes detected')
             
-            print('Creating foreground mask with 3 elements...')
+            #print('Creating foreground mask with 3 elements...')
             fg_mask = np.zeros_like(frame[:, :, 0])    
 
             # if eyes were detected
@@ -188,30 +187,30 @@ if cap.isOpened():
                 fg_mask = cv2.add(fg_mask, inner_face_mask)
 
             if len(face) > 0:
-                for (x, y, w, h) in face:
-                    scale = 1.5
-                    center_x = x + (w/2)
-                    center_y = y + (h/2)
-                    w1 = int(scale * w)
-                    h1 = int(scale * h)
-                    x1 = int(center_x - ((w1)/2))
-                    y1 = int(center_y - ((h1)/2))
-                    skin_roi = (x1, x1+w1, y1, y1+h1) 
+                x, y, w, h = face[0][0], face[0][1], face[0][2], face[0][3]
+                scale = 1.5
+                center_x = x + (w/2)
+                center_y = y + (h/2)
+                w1 = int(scale * w)
+                h1 = int(scale * h)
+                x1 = int(center_x - ((w1)/2))
+                y1 = int(center_y - ((h1)/2))
+                skin_roi = (x1, x1+w1, y1, y1+h1) 
 
-                    # detect skin and create mask
-                    skin_mask = get_skin_mask(frame, skin_roi, skin_gmm, not_skin_gmm)
-                    print('[2/3] Skin mask done')
+                # detect skin and create mask
+                skin_mask = get_skin_mask(frame, skin_roi, skin_gmm, not_skin_gmm)
+                #print('[2/3] Skin mask done')
 
-                    # add to foreground mask
-                    fg_mask = cv2.add(fg_mask, skin_mask)
+                # add to foreground mask
+                fg_mask = cv2.add(fg_mask, skin_mask)
 
 
-                    # detect shoulders and create mask
-                    shoulder_mask = get_shoulder_mask(frame, x, y, w, h)
-                    print('[3/3] Shoulder mask done')
+                # detect shoulders and create mask
+                shoulder_mask = get_shoulder_mask(frame, x, y, w, h)
+                #print('[3/3] Shoulder mask done')
 
-                    # add to foreground mask
-                    fg_mask = cv2.add(fg_mask, shoulder_mask)
+                # add to foreground mask
+                fg_mask = cv2.add(fg_mask, shoulder_mask)
 
 
             # clip final foreground mask to ensure binary values
