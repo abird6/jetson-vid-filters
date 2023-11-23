@@ -1,13 +1,37 @@
 # import libraries
 import numpy as np
 import cv2
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 from sklearn.mixture import GaussianMixture
 import pandas as pd
-import seaborn as sns
-from skimage.io import imread
-from skimage.color import rgb2ycbcr, gray2rgb
+import sys
+
+# initialise CSI port for camera
+def gstreamer_pipeline(
+    sensor_id=0,
+    capture_width=640,
+    capture_height=480,
+    display_width=640,
+    display_height=480,
+    framerate=30,
+    flip_method=0,
+):
+    return (
+        "nvarguscamerasrc sensor-id=%d ! "
+        "video/x-raw(memory:NVMM), width=(int)%d, height=(int)%d, framerate=(fraction)%d/1 ! "
+        "nvvidconv flip-method=%d ! "
+        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
+        "videoconvert ! "
+        "video/x-raw, format=(string)BGR ! appsink"
+        % (
+            sensor_id,
+            capture_width,
+            capture_height,
+            framerate,
+            flip_method,
+            display_width,
+            display_height,
+        )
+    )
 
 # initialise skin cascade classifier and GMM
 def init_skin_classifier(path):
@@ -108,7 +132,7 @@ def get_inner_face_mask(frame, eyes):
 
     return face_mask
 
-
+is_blurring = int(sys.argv[1]) == 0
 
 # setup cascade classifier for face region
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt.xml')
@@ -126,93 +150,105 @@ skin_gmm, not_skin_gmm = init_skin_classifier(path)
 bg_img = cv2.imread('background.png')
 bg_img = cv2.cvtColor(bg_img, cv2.COLOR_BGR2RGB)
 
-# setup webcam feed
-cap = cv2.VideoCapture(0)
+# start camera captures
+print('Opening camera...')
+cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+window_title = 'Background '
+window_title += 'Blurring' if is_blurring else 'Replacement'
+if cap.isOpened():
+    try:
+        window_handle = cv2.namedWindow(window_title, cv2.WINDOW_AUTOSIZE)
+        while True:
+            ret, frame = cap.read()
 
-print('Opening webcam...')
-while True:
-    ret, frame = cap.read()
+            if not ret: # if no frame is read
+                break
+            
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    if not ret: # if no frame is read
-        break
-    
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # create a region of interest for skin classifier using cv2 face detect
+            frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            face = face_cascade.detectMultiScale(frame_grey, 1.1, 4)
+            print('Face detected' if len(face) > 0 else 'No Faces detected')
 
-    # create a region of interest for skin classifier using cv2 face detect
-    frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    face = face_cascade.detectMultiScale(frame_grey, 1.1, 4)
-    print('Face detected' if len(face) > 0 else 'No Faces detected')
+            eyes = eye_cascade.detectMultiScale(frame_grey, 1.1, 4)
+            print('Eyes detected' if len(eyes) > 0 else 'No Eyes detected')
+            
+            print('Creating foreground mask with 3 elements...')
+            fg_mask = np.zeros_like(frame[:, :, 0])    
 
-    eyes = eye_cascade.detectMultiScale(frame_grey, 1.1, 4)
-    print('Eyes detected' if len(eyes) > 0 else 'No Eyes detected')
-    
-    print('Creating foreground mask with 3 elements...')
-    fg_mask = np.zeros_like(frame[:, :, 0])    
+            # if eyes were detected
+            if len(eyes) > 0:
+                # use detected eyes to generate mask for inner face region
+                inner_face_mask = get_inner_face_mask(frame, eyes)
 
-    # if eyes were detected
-    if len(eyes) > 0:
-        # use detected eyes to generate mask for inner face region
-        inner_face_mask = get_inner_face_mask(frame, eyes)
+                # add new mask to foreground
+                fg_mask = cv2.add(fg_mask, inner_face_mask)
 
-        # add new mask to foreground
-        fg_mask = cv2.add(fg_mask, inner_face_mask)
+            if len(face) > 0:
+                for (x, y, w, h) in face:
+                    scale = 1.5
+                    center_x = x + (w/2)
+                    center_y = y + (h/2)
+                    w1 = int(scale * w)
+                    h1 = int(scale * h)
+                    x1 = int(center_x - ((w1)/2))
+                    y1 = int(center_y - ((h1)/2))
+                    skin_roi = (x1, x1+w1, y1, y1+h1) 
 
-    if len(face) > 0:
-        for (x, y, w, h) in face:
-            scale = 1.5
-            center_x = x + (w/2)
-            center_y = y + (h/2)
-            w1 = int(scale * w)
-            h1 = int(scale * h)
-            x1 = int(center_x - ((w1)/2))
-            y1 = int(center_y - ((h1)/2))
-            skin_roi = (x1, x1+w1, y1, y1+h1) 
+                    # detect skin and create mask
+                    skin_mask = get_skin_mask(frame, skin_roi, skin_gmm, not_skin_gmm)
+                    print('[2/3] Skin mask done')
 
-            # detect skin and create mask
-            skin_mask = get_skin_mask(frame, skin_roi, skin_gmm, not_skin_gmm)
-            print('[2/3] Skin mask done')
-
-            # add to foreground mask
-            fg_mask = cv2.add(fg_mask, skin_mask)
-
-
-            # detect shoulders and create mask
-            shoulder_mask = get_shoulder_mask(frame, x, y, w, h)
-            print('[3/3] Shoulder mask done')
-
-            # add to foreground mask
-            fg_mask = cv2.add(fg_mask, shoulder_mask)
+                    # add to foreground mask
+                    fg_mask = cv2.add(fg_mask, skin_mask)
 
 
-    # clip final foreground mask to ensure binary values
-    fg_mask[fg_mask > 1] = 1
+                    # detect shoulders and create mask
+                    shoulder_mask = get_shoulder_mask(frame, x, y, w, h)
+                    print('[3/3] Shoulder mask done')
 
-    # create background mask from foreground mask
-    print('Isolating background...')
-    bg_mask = cv2.bitwise_not(fg_mask)
-    bg_mask[fg_mask >= 1] = 0
+                    # add to foreground mask
+                    fg_mask = cv2.add(fg_mask, shoulder_mask)
 
-    # create final frame with mask 
-    final_frame = cv2.bitwise_and(frame, frame, mask=fg_mask)
-    final_frame = cv2.cvtColor(final_frame, cv2.COLOR_BGR2RGB)
 
-    # show frame with background replaced
-    bg_img = cv2.resize(bg_img, (frame.shape[1], frame.shape[0]))
-    bg_frame = cv2.bitwise_and(bg_img, bg_img, mask=bg_mask)
-    frame_bg_replace = cv2.add(final_frame, bg_frame)
-    cv2.imshow('Background Replacement', frame_bg_replace)
+            # clip final foreground mask to ensure binary values
+            fg_mask[fg_mask > 1] = 1
 
-    # show frame with background blurred
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    bg_blur = cv2.GaussianBlur(frame, (15, 15), sigmaX=8)
-    bg_blur = cv2.bitwise_and(bg_blur, bg_blur, mask=bg_mask)
-    frame_bg_blur = cv2.add(final_frame, bg_blur)
-    cv2.imshow('Background Blurring', frame_bg_blur)
-        
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+            # create background mask from foreground mask
+            print('Isolating background...')
+            bg_mask = cv2.bitwise_not(fg_mask)
+            bg_mask[fg_mask >= 1] = 0
 
-cap.release()
-cv2.destroyAllWindows()
+            # create final frame with mask 
+            final_frame = cv2.bitwise_and(frame, frame, mask=fg_mask)
+            final_frame = cv2.cvtColor(final_frame, cv2.COLOR_BGR2RGB)
+            if cv2.getWindowProperty(window_title, cv2.WND_PROP_AUTOSIZE) >= 0:
+                if is_blurring:
+                    # show frame with background blurred
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    bg_blur = cv2.GaussianBlur(frame, (15, 15), sigmaX=8)
+                    bg_blur = cv2.bitwise_and(bg_blur, bg_blur, mask=bg_mask)
+                    frame_bg_blur = cv2.add(final_frame, bg_blur)
+                    cv2.imshow(window_title, frame_bg_blur)
+                else:
+                    # show frame with background replaced
+                    bg_img = cv2.resize(bg_img, (frame.shape[1], frame.shape[0]))
+                    bg_frame = cv2.bitwise_and(bg_img, bg_img, mask=bg_mask)
+                    frame_bg_replace = cv2.add(final_frame, bg_frame)
+                    cv2.imshow(window_title, frame_bg_replace)
+
+            else:
+                break
+            key = cv2.waitKey(10) & 0xFF
+            if key == 27 or key == ord('q'):
+                break
+    finally:
+        cap.release()   
+        cv2.destroyAllWindows()
+else:
+    print('Error: unable to open camera')
+
+
 
 
