@@ -152,7 +152,8 @@ bg_img = cv2.cvtColor(bg_img, cv2.COLOR_BGR2RGB)
 
 # start camera captures
 print('Opening camera...')
-cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
+#cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
+cap = cv2.VideoCapture(0)
 
 # OPTIMISATION: limit frame buffer size
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
@@ -161,11 +162,16 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
 window_title = 'Background '
 window_title += 'Blurring' if is_blurring else 'Replacement'
 frame_counter = 5
+first_frame = True
 if cap.isOpened():
     try:
         window_handle = cv2.namedWindow(window_title, cv2.WINDOW_AUTOSIZE)
         while True:
-            ret, frame = cap.read()
+            if first_frame:
+                ret, frame_read = cap.read()
+                first_frame = False
+            else:
+                ret, _ = cap.read(frame_read)
 
             if not ret: # if no frame is read
                 break
@@ -173,7 +179,7 @@ if cap.isOpened():
             if frame_counter == 5:
 
                 # create a region of interest for skin classifier using cv2 face detect
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame = cv2.cvtColor(frame_read, cv2.COLOR_BGR2RGB)
                 frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 face = face_cascade.detectMultiScale(frame_grey, 1.1, 4)
                 #print('Face detected' if len(face) > 0 else 'No Faces detected')
