@@ -12,7 +12,7 @@ def gstreamer_pipeline(
     capture_height=480,
     display_width=640,
     display_height=480,
-    framerate=30,
+    framerate=15,
     flip_method=0,
 ):
     return (
@@ -135,11 +135,11 @@ def get_inner_face_mask(frame, eyes):
 is_blurring = int(sys.argv[1]) == 0
 
 # setup cascade classifier for face region
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt.xml')
+face_cascade = cv2.cuda_CascadeClassifier('haarcascade_frontalface_alt.xml')
 print('Initialising face classifier...')
 
 # setup classifier for eye region
-eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+eye_cascade = cv2.cuda_CascadeClassifier('haarcascade_eye.xml')
 print('Initialising eye classifier...')
 
 # setup skin_notSkin classifier
@@ -168,10 +168,12 @@ if cap.isOpened():
 
             # create a region of interest for skin classifier using cv2 face detect
             frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            face = face_cascade.detectMultiScale(frame_grey, 1.1, 4)
+            cuFrame_face = cv2.cuda_GpuMat(frame_grey)
+            face = face_cascade.detectMultiScale(cuFrame_face).download()
             print('Face detected' if len(face) > 0 else 'No Faces detected')
 
-            eyes = eye_cascade.detectMultiScale(frame_grey, 1.1, 4)
+            cuFrame_eye = cv2.cuda_GpuMat(frame_grey)
+            eyes = eye_cascade.detectMultiScale(cuFrame_eye).download()
             print('Eyes detected' if len(eyes) > 0 else 'No Eyes detected')
             
             print('Creating foreground mask with 3 elements...')
