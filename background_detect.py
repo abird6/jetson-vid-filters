@@ -162,11 +162,11 @@ if cap.isOpened():
         while True:
             ret, frame = cap.read()
             gpu_frame.upload(frame)
+            print(gpu_frame.shape)
 
             if not ret: # if no frame is read
                 break
             
-            frame = cv2.cvtColor(gpu_frame, cv2.COLOR_BGR2RGB)
 
             # create a region of interest for skin classifier using cv2 face detect
             frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
