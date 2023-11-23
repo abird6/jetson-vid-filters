@@ -98,7 +98,6 @@ def get_shoulder_mask(frame, x, y, w, h):
 
     # apply colour segmentation to mask region
     frame_yuv = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
-    gpu_frame.upload(frame_yuv)
     mean_colour = np.mean(frame_yuv[y2:y2+h2, x2:x2+w2], axis=(0, 1)).astype(np.uint8)
     tolerance = 50
     lower = np.array([mean_colour[0] - tolerance, mean_colour[1] - tolerance, mean_colour[2] - tolerance])
@@ -106,6 +105,7 @@ def get_shoulder_mask(frame, x, y, w, h):
 
 
     # create new mask from hsv colour limits
+    gpu_frame.upload(frame_yuv)
     hsv_mask = cv2.cuda.inRange(src=frame_yuv, lowerb=lower, upperb=upper)
     shoulder_mask = cv2.cuda.bitwise_and(hsv_mask, region_mask)
 
