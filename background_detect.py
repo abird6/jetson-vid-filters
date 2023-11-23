@@ -169,7 +169,7 @@ if cap.isOpened():
 
             # create a region of interest for skin classifier using cv2 face detect
             frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gpu_frame = cv2.cuda_GpuMat(frame_grey.shape[0], frame_grey.shape[1], 0)
+            gpu_frame = cv2.cuda.GpuMat(frame_grey.shape[0], frame_grey.shape[1], 0)
             gpu_frame.upload(frame_grey)
             face = face_cascade.detectMultiScale(gpu_frame, 1.1, 4)
             print('Face detected' if len(face) > 0 else 'No Faces detected')
