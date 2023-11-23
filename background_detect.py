@@ -135,11 +135,11 @@ def get_inner_face_mask(frame, eyes):
 is_blurring = int(sys.argv[1]) == 0
 
 # setup cascade classifier for face region
-face_cascade = cv2.cuda_CascadeClassifier('haarcascade_frontalface_alt.xml')
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_alt.xml')
 print('Initialising face classifier...')
 
 # setup classifier for eye region
-eye_cascade = cv2.cuda_CascadeClassifier('haarcascade_eye.xml')
+eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 print('Initialising eye classifier...')
 
 # setup skin_notSkin classifier
@@ -169,14 +169,16 @@ if cap.isOpened():
 
             # create a region of interest for skin classifier using cv2 face detect
             frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gpu_frame = cv2.cuda_GpuMat(frame_grey)
-            face = face_cascade.detectMultiScale(gpu_frame).download()
+            gpu_frame = cv2.cuda_GpuMat()
+            gpu_frame.upload(frame_grey)
+            face = face_cascade.detectMultiScale(gpu_frame, 1.1, 4)
             print('Face detected' if len(face) > 0 else 'No Faces detected')
 
-            eyes = eye_cascade.detectMultiScale(gpu_frame).download()
+            eyes = eye_cascade.detectMultiScale(gpu_frame, 1.1, 4)
             print('Eyes detected' if len(eyes) > 0 else 'No Eyes detected')
             
             print('Creating foreground mask with 3 elements...')
+            frame = gpu_frame.download()
             fg_mask = np.zeros_like(frame[:, :, 0])    
 
             # if eyes were detected
