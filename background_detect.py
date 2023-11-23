@@ -1,7 +1,7 @@
 # import libraries
+from sklearn.mixture import GaussianMixture
 import numpy as np
 import cv2
-from sklearn.mixture import GaussianMixture
 import pandas as pd
 import sys
 
