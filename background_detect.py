@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import pandas as pd
 import sys
+import time
 
 # initialise CSI port for camera
 def gstreamer_pipeline(
@@ -154,6 +155,9 @@ bg_img = cv2.cvtColor(bg_img, cv2.COLOR_BGR2RGB)
 print('Opening camera...')
 cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
 
+# OPTIMISATION: limit frame buffer size
+cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
+
 # initial CUDA GPU upload before camera starts
 window_title = 'Background '
 window_title += 'Blurring' if is_blurring else 'Replacement'
@@ -244,6 +248,7 @@ if cap.isOpened():
             key = cv2.waitKey(10) & 0xFF
             if key == 27 or key == ord('q'):
                 break
+            time.sleep(1/15)
     finally:
         cap.release()   
         cv2.destroyAllWindows()
