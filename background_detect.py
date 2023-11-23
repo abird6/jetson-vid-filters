@@ -82,6 +82,8 @@ def get_skin_mask(frame_rgb, skin_roi, skin_gmm, not_skin_gmm):
     return mask
 
 def get_shoulder_mask(frame, x, y, w, h):
+    gpu_frame = cv2.cuda_GpuMat()
+    gpu_frame.upload(frame)
     shoulder_mask = []
 
     k = 2.5 # scaling factor from head to shoulders
@@ -104,11 +106,11 @@ def get_shoulder_mask(frame, x, y, w, h):
 
 
     # create new mask from hsv colour limits
-    hsv_mask = cv2.inRange(frame_yuv, lower, upper)
-    shoulder_mask = cv2.bitwise_and(hsv_mask, region_mask)
+    hsv_mask = cv2.cuda.inRange(frame_yuv, lower, upper)
+    shoulder_mask = cv2.cuda.bitwise_and(hsv_mask, region_mask)
 
     # dilate mask to reduce blank spots
-    shoulder_mask = cv2.dilate(shoulder_mask, (10, 10), iterations=40)
+    shoulder_mask = cv2.cuda.dilate(shoulder_mask, (10, 10), iterations=40)
         
     return shoulder_mask
 
@@ -170,16 +172,13 @@ if cap.isOpened():
 
             # create a region of interest for skin classifier using cv2 face detect
             frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gpu_frame = cv2.cuda_GpuMat(frame_grey.shape[0], frame_grey.shape[1], 0)
-            gpu_frame = cuda.GpuMat(frame_grey)
-            face = face_cascade.detectMultiScale(gpu_frame, 1.1, 4)
+            face = face_cascade.detectMultiScale(frame_grey, 1.1, 4)
             print('Face detected' if len(face) > 0 else 'No Faces detected')
 
-            eyes = eye_cascade.detectMultiScale(gpu_frame, 1.1, 4)
+            eyes = eye_cascade.detectMultiScale(frame_grey, 1.1, 4)
             print('Eyes detected' if len(eyes) > 0 else 'No Eyes detected')
             
             print('Creating foreground mask with 3 elements...')
-            frame = gpu_frame.download()
             fg_mask = np.zeros_like(frame[:, :, 0])    
 
             # if eyes were detected
