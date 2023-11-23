@@ -217,7 +217,7 @@ if cap.isOpened():
             fg_mask[fg_mask > 1] = 1
 
             # create background mask from foreground mask
-            print('Isolating background...')
+            #print('Isolating background...')
             bg_mask = cv2.bitwise_not(fg_mask)
             bg_mask[fg_mask >= 1] = 0
 
