@@ -135,11 +135,11 @@ def get_inner_face_mask(frame, eyes):
 is_blurring = int(sys.argv[1]) == 0
 
 # setup cascade classifier for face region
-face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_alt.xml')
+face_cascade = cv2.cuda_CascadeClassifier.create('haarcascade_frontalface_alt.xml')
 print('Initialising face classifier...')
 
 # setup classifier for eye region
-eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
+eye_cascade = cv2.cuda_CascadeClassifier.create('haarcascade_eye.xml')
 print('Initialising eye classifier...')
 
 # setup skin_notSkin classifier
@@ -153,7 +153,8 @@ bg_img = cv2.cvtColor(bg_img, cv2.COLOR_BGR2RGB)
 # start camera captures
 print('Opening camera...')
 cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
-gpu_frame = cv2.cuda_GpuMat()
+
+# initial CUDA GPU upload before camera starts
 window_title = 'Background '
 window_title += 'Blurring' if is_blurring else 'Replacement'
 if cap.isOpened():
@@ -161,8 +162,6 @@ if cap.isOpened():
         window_handle = cv2.namedWindow(window_title, cv2.WINDOW_AUTOSIZE)
         while True:
             ret, frame = cap.read()
-            gpu_frame.upload(frame)
-            print(gpu_frame.shape)
 
             if not ret: # if no frame is read
                 break
@@ -170,10 +169,11 @@ if cap.isOpened():
 
             # create a region of interest for skin classifier using cv2 face detect
             frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            face = face_cascade.detectMultiScale(frame_grey, 1.1, 4)
+            gpu_frame = cv2.cuda_GpuMat(frame_grey)
+            face = face_cascade.detectMultiScale(gpu_frame).download()
             print('Face detected' if len(face) > 0 else 'No Faces detected')
 
-            eyes = eye_cascade.detectMultiScale(frame_grey, 1.1, 4)
+            eyes = eye_cascade.detectMultiScale(gpu_frame).download()
             print('Eyes detected' if len(eyes) > 0 else 'No Eyes detected')
             
             print('Creating foreground mask with 3 elements...')
