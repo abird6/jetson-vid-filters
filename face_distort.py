@@ -63,35 +63,40 @@ if __name__ == '__main__':
         flags = cv2.CASCADE_SCALE_IMAGE #flags = cv2.cv.CV_HAAR_SCALE_IMAGE
         )
 
-        # faces: x y h w
-        face_center_x = faces[0][0] + faces[0][3] // 2
-        face_center_y = faces[0][1] + faces[0][2] // 2
+        if len(faces) > 0:
 
-        # set up the x and y maps as float32
-        flex_x = np.zeros((h, w), np.float32)
-        flex_y = np.zeros((h, w), np.float32)
+            # faces: x y h w
+            face_center_x = faces[0][0] + faces[0][3] // 2
+            face_center_y = faces[0][1] + faces[0][2] // 2
 
-        # create map with the barrel pincushion distortion formula
-        for y in range(h):
-            delta_y = scale_y * (y - face_center_y)
-            for x in range(w):
-                # determine if pixel is within an ellipse
-                delta_x = scale_x * (x - face_center_x)
-                distance = delta_x * delta_x + delta_y * delta_y
-                if distance >= (radius * radius):
-                    flex_x[y, x] = x
-                    flex_y[y, x] = y
-                else:
-                    factor = 1.0
-                    if distance > 0.0:
-                        factor = math.pow(math.sin(math.pi * math.sqrt(distance) / radius / 2), -amount)
-                    flex_x[y, x] = factor * delta_x / scale_x + face_center_x
-                    flex_y[y, x] = factor * delta_y / scale_y + face_center_y
+            # set up the x and y maps as float32
+            flex_x = np.zeros((h, w), np.float32)
+            flex_y = np.zeros((h, w), np.float32)
 
-        # do the remap  this is where the magic happens
-        dst = cv2.remap(frame, flex_x, flex_y, cv2.INTER_LINEAR)
+            # create map with the barrel pincushion distortion formula
+            for y in range(h):
+                delta_y = scale_y * (y - face_center_y)
+                for x in range(w):
+                    # determine if pixel is within an ellipse
+                    delta_x = scale_x * (x - face_center_x)
+                    distance = delta_x * delta_x + delta_y * delta_y
+                    if distance >= (radius * radius):
+                        flex_x[y, x] = x
+                        flex_y[y, x] = y
+                    else:
+                        factor = 1.0
+                        if distance > 0.0:
+                            factor = math.pow(math.sin(math.pi * math.sqrt(distance) / radius / 2), -amount)
+                        flex_x[y, x] = factor * delta_x / scale_x + face_center_x
+                        flex_y[y, x] = factor * delta_y / scale_y + face_center_y
 
-        cv2.imshow('Distorted', dst)
+            # do the remap  this is where the magic happens
+            dst = cv2.remap(frame, flex_x, flex_y, cv2.INTER_LINEAR)
+
+            cv2.imshow('Distorted', dst)
+
+        else:
+            break
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
