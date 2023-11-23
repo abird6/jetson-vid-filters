@@ -62,7 +62,7 @@ def get_skin_mask(frame_rgb, skin_roi, skin_gmm, not_skin_gmm):
     # create rough mask around skin_roi (i.e. face)
     mask_roi = np.zeros_like(frame_rgb[:, :, 0])
     mask_roi[skin_roi[2]:skin_roi[3], skin_roi[0]:skin_roi[1]] = 255
-    frame = cv2.cuda.bitwise_and(frame_rgb, frame_rgb, mask=mask_roi)
+    frame = cv2.bitwise_and(frame_rgb, frame_rgb, mask=mask_roi)
 
     # convert to YCbCr
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
