@@ -135,11 +135,11 @@ def get_inner_face_mask(frame, eyes):
 is_blurring = int(sys.argv[1]) == 0
 
 # setup cascade classifier for face region
-face_cascade = cv2.cuda_CascadeClassifier.create('haarcascade_frontalface_alt.xml')
+face_cascade = cv2.cuda_CascadeClassifier('haarcascade_frontalface_alt.xml')
 print('Initialising face classifier...')
 
 # setup classifier for eye region
-eye_cascade = cv2.cuda_CascadeClassifier.create('haarcascade_eye.xml')
+eye_cascade = cv2.cuda_CascadeClassifier('haarcascade_eye.xml')
 print('Initialising eye classifier...')
 
 # setup skin_notSkin classifier
