@@ -152,8 +152,7 @@ bg_img = cv2.cvtColor(bg_img, cv2.COLOR_BGR2RGB)
 
 # start camera captures
 print('Opening camera...')
-#cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
 
 # OPTIMISATION: limit frame buffer size
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
