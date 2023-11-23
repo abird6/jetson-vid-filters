@@ -174,6 +174,7 @@ if cap.isOpened():
             if frame_counter == 5:
 
                 # create a region of interest for skin classifier using cv2 face detect
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 face = face_cascade.detectMultiScale(frame_grey, 1.1, 4)
                 #print('Face detected' if len(face) > 0 else 'No Faces detected')
