@@ -83,7 +83,6 @@ def get_skin_mask(frame_rgb, skin_roi, skin_gmm, not_skin_gmm):
 
 def get_shoulder_mask(frame, x, y, w, h):
     gpu_frame = cv2.cuda_GpuMat()
-    gpu_frame.upload(frame)
     shoulder_mask = []
 
     k = 2.5 # scaling factor from head to shoulders
@@ -99,6 +98,7 @@ def get_shoulder_mask(frame, x, y, w, h):
 
     # apply colour segmentation to mask region
     frame_yuv = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
+    gpu_frame.upload(frame_yuv)
     mean_colour = np.mean(frame_yuv[y2:y2+h2, x2:x2+w2], axis=(0, 1)).astype(np.uint8)
     tolerance = 50
     lower = np.array([mean_colour[0] - tolerance, mean_colour[1] - tolerance, mean_colour[2] - tolerance])
@@ -111,6 +111,8 @@ def get_shoulder_mask(frame, x, y, w, h):
 
     # dilate mask to reduce blank spots
     shoulder_mask = cv2.cuda.dilate(shoulder_mask, (10, 10), iterations=40)
+
+    shoulder_mask = gpu_frame.download()
         
     return shoulder_mask
 
