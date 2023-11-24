@@ -70,14 +70,15 @@ while True:
 
 
     #Draw a rectangle around the faces
-    for (x, y, w,h) in faces:
-        face = frame[y:y+h, x:x+w]
-        edges = edge_mask(face, 11, 7)
-        colour = color_quantization(face, 4)
-        blurred = cv2.bilateralFilter(colour, d=7, sigmaColor=200, sigmaSpace=200)
-        cartoon = cv2.bitwise_and(blurred, blurred, mask=edges)
-        frame[y:y+h, x:x+w] = cartoon
-    
+    if len(faces) > 0:
+      for (x, y, w,h) in faces:
+          face = frame[y:y+h, x:x+w]
+          edges = edge_mask(face, 11, 7)
+          colour = color_quantization(face, 4)
+          blurred = cv2.bilateralFilter(colour, d=7, sigmaColor=200, sigmaSpace=200)
+          cartoon = cv2.bitwise_and(blurred, blurred, mask=edges)
+          frame[y:y+h, x:x+w] = cartoon
+      
     cv2.imshow('video',frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):

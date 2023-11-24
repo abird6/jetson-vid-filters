@@ -78,7 +78,7 @@ if __name__ == '__main__':
         )
 
 
-        for (x, y, w, h) in faces:
+        if len(faces) > 0:
             # Apply nose enlargement effect
             frame = enlarge_nose(frame, faces)
 
