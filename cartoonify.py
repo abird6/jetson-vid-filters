@@ -32,7 +32,7 @@ def gstreamer_pipeline(
         )
     )
 
-cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
 
 def edge_mask(img, line_size, blur_value):
   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

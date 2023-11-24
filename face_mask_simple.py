@@ -32,7 +32,7 @@ def gstreamer_pipeline(
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
-cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
 
 replacement_image = cv2.imread('cat2.png', cv2.IMREAD_UNCHANGED)
 

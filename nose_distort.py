@@ -60,7 +60,7 @@ if __name__ == '__main__':
     face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
     # read in video feed
-    vid = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+    vid = cv2.VideoCapture(gstreamer_pipeline(flip_method=q), cv2.CAP_GSTREAMER)
 
     ret, frame = vid.read()
 
@@ -77,8 +77,10 @@ if __name__ == '__main__':
             flags=cv2.CASCADE_SCALE_IMAGE
         )
 
-        # Apply nose enlargement effect
-        frame = enlarge_nose(frame, faces)
+
+        for (x, y, w, h) in faces:
+            # Apply nose enlargement effect
+            frame = enlarge_nose(frame, faces)
 
         # Display the result
         cv2.imshow('Nose Enlargement', frame)

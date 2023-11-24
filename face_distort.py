@@ -9,7 +9,7 @@ def gstreamer_pipeline(
     capture_height=480,
     display_width=640,
     display_height=480,
-    framerate=30,
+    framerate=1,
     flip_method=0,
 ):
     return (
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
     # read in video feed
-    vid = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+    vid = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
 
     ret, frame = vid.read()
 
