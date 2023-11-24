@@ -49,6 +49,9 @@ def enlarge_nose(frame, faces):
 
         # Enlarge the nose region
         print(nose_region.shape)
+        if(nose_region.shape[0] == 0 or nose_region.shape[1] == 0):
+            break
+
         enlarged_nose = cv2.resize(nose_region, (nose_width * 2, nose_height * 2), interpolation=cv2.INTER_LINEAR)
 
         # Replace the original nose region with the enlarged one
