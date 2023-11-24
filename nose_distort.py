@@ -60,7 +60,7 @@ if __name__ == '__main__':
     face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
     # read in video feed
-    vid = cv2.VideoCapture(gstreamer_pipeline(flip_method=q), cv2.CAP_GSTREAMER)
+    vid = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
 
     ret, frame = vid.read()
 
