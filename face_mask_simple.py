@@ -32,7 +32,7 @@ def gstreamer_pipeline(
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
-cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
+cap = cv2.VideoCapture(0)
 
 replacement_image = cv2.imread('cat2.png', cv2.IMREAD_UNCHANGED)
 
@@ -50,10 +50,13 @@ while True:
         flags=cv2.CASCADE_SCALE_IMAGE
     )
 
-    # Draw a rectangle around the faces
+    # For each face
     for (x, y, w, h) in faces:
+        # Resize the replacement img to fit the bounding box
         replacement_face = cv2.resize(replacement_image, (w, h))
-        alpha_channel = replacement_face[:, :, 3] / 255.0  # Normalize alpha channel
+
+        # Normalize alpha channel
+        alpha_channel = replacement_face[:, :, 3] / 255.0  
         beta = 1.0 - alpha_channel
 
         # Overlay the replacement face on the original frame
@@ -61,7 +64,7 @@ while True:
             frame[y:y+h, x:x+w, c] = (beta * frame[y:y+h, x:x+w, c] +
                                        alpha_channel * replacement_face[:, :, c])
 
-    cv2.imshow('video', frame)
+    cv2.imshow('Replacement Face Filter', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

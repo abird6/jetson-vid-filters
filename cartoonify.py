@@ -34,15 +34,12 @@ def gstreamer_pipeline(
 
 cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
 
+# Method for performing Laplacian edge detection
 def edge_mask(img, line_size, blur_value):
   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
   gray_blur = cv2.medianBlur(gray, blur_value)
   edges = cv2.adaptiveThreshold(gray_blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, line_size, blur_value)
   return edges
-
-def color_quantization(img, k):
-# Transform the image
-  data = np.float32(img).reshape((-1, 3))
 
 # Determine criteria
   criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 0.001)
@@ -68,18 +65,28 @@ while True:
     flags = cv2.CASCADE_SCALE_IMAGE #flags = cv2.cv.CV_HAAR_SCALE_IMAGE
     )
 
-
     #Draw a rectangle around the faces
     if len(faces) > 0:
       for (x, y, w,h) in faces:
+          # Extract face
           face = frame[y:y+h, x:x+w]
+          
+          # Run Laplacian edge detection
           edges = edge_mask(face, 11, 7)
-          colour = color_quantization(face, 4)
+
+          # Reduce the colour space to only 3 colours
+          colour = np.float32(face).reshape((-1, 3))
+
+          # Blur the colours to smooth out the edges
           blurred = cv2.bilateralFilter(colour, d=7, sigmaColor=200, sigmaSpace=200)
+          
+          # AND together the edges and the colours
           cartoon = cv2.bitwise_and(blurred, blurred, mask=edges)
+
+          # Overlay result into original image
           frame[y:y+h, x:x+w] = cartoon
       
-    cv2.imshow('video',frame)
+    cv2.imshow('Cartoon Filter',frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

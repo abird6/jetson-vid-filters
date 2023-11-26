@@ -32,7 +32,7 @@ def gstreamer_pipeline(
 def enlarge_nose(frame, faces):
     # Iterate through detected faces
     for (x, y, w, h) in faces:
-        # Enlarge the nose region
+        # Define the nose region coordinates
         nose_x = x + w // 4 + 25
         nose_y = y + h // 2 - 5
         nose_width = w // 2 - 50
@@ -44,14 +44,14 @@ def enlarge_nose(frame, faces):
         nose_width = min(frame.shape[1] - nose_x, nose_width)
         nose_height = min(frame.shape[0] - nose_y, nose_height)
 
-        # Resize the nose region
+        # Define the nose region
         nose_region = frame[nose_y:nose_y + nose_height, nose_x:nose_x + nose_width]
 
-        # Enlarge the nose region
-        print(nose_region.shape)
+        # Check if nose x or y is not 0
         if(nose_region.shape[0] == 0 or nose_region.shape[1] == 0):
             break
 
+        # Resize the nose (double the size)
         enlarged_nose = cv2.resize(nose_region, (nose_width * 2, nose_height * 2), interpolation=cv2.INTER_LINEAR)
 
         # Replace the original nose region with the enlarged one
