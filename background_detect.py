@@ -128,7 +128,7 @@ def get_inner_face_mask(frame, eyes):
     # use box coordinates to create mask
     face_mask = np.zeros_like(frame[:, :, 0])
     face_mask[y:y1, x:x1] = 255
-    #print('[1/3] Inner face mask done')
+    print('[1/3] Inner face mask done')
 
     return face_mask
 
@@ -161,32 +161,24 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
 window_title = 'Background '
 window_title += 'Blurring' if is_blurring else 'Replacement'
 frame_counter = 5
-first_frame = True
 if cap.isOpened():
     try:
         window_handle = cv2.namedWindow(window_title, cv2.WINDOW_AUTOSIZE)
         while True:
-            if first_frame:
-                ret, frame_read = cap.read()
-                first_frame = False
-            else:
-                ret, _ = cap.read(frame_read)
-
-            if not ret: # if no frame is read
-                break
+            ret, frame_read = cap.read()
                 
             if frame_counter == 5:
 
                 # create a region of interest for skin classifier using cv2 face detect
-                frame = cv2.cvtColor(frame_read, cv2.COLOR_BGR2RGB)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 face = face_cascade.detectMultiScale(frame_grey, 1.1, 4)
-                #print('Face detected' if len(face) > 0 else 'No Faces detected')
+                print('Face detected' if len(face) > 0 else 'No Faces detected')
 
                 eyes = eye_cascade.detectMultiScale(frame_grey, 1.1, 4)
-                #print('Eyes detected' if len(eyes) > 0 else 'No Eyes detected')
+                print('Eyes detected' if len(eyes) > 0 else 'No Eyes detected')
                 
-                #print('Creating foreground mask with 3 elements...')
+                print('Creating foreground mask with 3 elements...')
                 fg_mask = np.zeros_like(frame[:, :, 0])    
 
                 # if eyes were detected
@@ -209,16 +201,16 @@ if cap.isOpened():
                     skin_roi = (x1, x1+w1, y1, y1+h1) 
 
                     # detect skin and create mask
-                    #skin_mask = get_skin_mask(frame, skin_roi, skin_gmm, not_skin_gmm)
-                    #print('[2/3] Skin mask done')
+                    skin_mask = get_skin_mask(frame, skin_roi, skin_gmm, not_skin_gmm)
+                    print('[2/3] Skin mask done')
 
                     # add to foreground mask
-                    #fg_mask = cv2.add(fg_mask, skin_mask)
+                    fg_mask = cv2.add(fg_mask, skin_mask)
 
 
                     # detect shoulders and create mask
                     shoulder_mask = get_shoulder_mask(frame, x, y, w, h)
-                    #print('[3/3] Shoulder mask done')
+                    print('[3/3] Shoulder mask done')
 
                     # add to foreground mask
                     fg_mask = cv2.add(fg_mask, shoulder_mask)
@@ -228,7 +220,7 @@ if cap.isOpened():
                 fg_mask[fg_mask > 1] = 1
 
                 # create background mask from foreground mask
-                #print('Isolating background...')
+                print('Isolating background...')
                 bg_mask = cv2.bitwise_not(fg_mask)
                 bg_mask[fg_mask >= 1] = 0
 
@@ -263,7 +255,3 @@ if cap.isOpened():
         cv2.destroyAllWindows()
 else:
     print('Error: unable to open camera')
-
-
-
-
